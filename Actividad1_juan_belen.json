@@ -1,0 +1,138 @@
+{
+  "name": "Actividad 1  - Agente Ventas Leads",
+  "nodes": [
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "chat_trigger",
+      "name": "Chat Trigger",
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.1,
+      "position": [-400, 0],
+      "webhookId": "ad738c67-b901-4a23-ac54-0502d7e8a23d"
+    },
+    {
+      "parameters": {
+        "options": {
+          "systemMessage": "# Rol\nEres el Asistente de Ventas y Calificación de Leads de nuestra empresa. Atiendes a personas interesadas en nuestros productos/servicios a través del chat.\n\n# Ámbito y Objetivos\n- Responder preguntas sobre productos, precios y disponibilidad.\n- Calificar leads: identificar nombre, email, empresa (si aplica) y qué necesita el cliente.\n- Registrar cada lead calificado en la hoja de Google Sheets \"Leads\" usando la herramienta disponible, con los campos: fecha, nombre, email, empresa, interés/necesidad, y estado.\n- Guiar amablemente la conversación para obtener los datos de contacto si el usuario muestra interés real.\n\n# Reglas / Restricciones\n- No inventes precios, plazos ni características que no conozcas: si no tienes la información, dilo con honestidad y ofrece derivar a un humano.\n- No compartas datos de otros leads ni información confidencial de la empresa.\n- No uses lenguaje inclusivo con @ o x (ej. \"todos/as\", \"les\", \"elles\"); usa español estándar y neutro cuando sea posible.\n- No registres un lead en Sheets sin al menos nombre y una forma de contacto (email).\n- Sé profesional, cercano y conciso. Evita respuestas excesivamente largas.\n- Si detectas una solicitud fuera de tu ámbito (soporte técnico, reclamos, temas no comerciales), indica que vas a derivar el caso.",
+          "maxIterations": 7
+        }
+      },
+      "id": "ai_agent",
+      "name": "AI Agent",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [-96, 0]
+    },
+    {
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "value": "1N1eIL9YQJ-sdz0TcphqRPnbDl7uWen2V_5uWwz6xKaA",
+          "mode": "list",
+          "cachedResultName": "Pre-entrega 1 - Coderhouse A2",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1N1eIL9YQJ-sdz0TcphqRPnbDl7uWen2V_5uWwz6xKaA/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "LEADS",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1N1eIL9YQJ-sdz0TcphqRPnbDl7uWen2V_5uWwz6xKaA/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "fecha": "={{ $now.toISO() }}",
+            "nombre": "={{ $fromAI('nombre', 'Nombre completo del lead', 'string') }}",
+            "email": "={{ $fromAI('email', 'Email de contacto del lead', 'string') }}",
+            "empresa": "={{ $fromAI('empresa', 'Empresa del lead, si aplica', 'string') }}",
+            "interes": "={{ $fromAI('interes', 'Que producto o servicio le interesa', 'string') }}",
+            "estado": "={{ $fromAI('estado', 'Estado del lead: nuevo, calificado, o derivado', 'string') }}"
+          },
+          "matchingColumns": ["email"],
+          "schema": [
+            { "id": "fecha", "displayName": "fecha", "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": true },
+            { "id": "nombre", "displayName": "nombre", "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": true },
+            { "id": "email", "displayName": "email", "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": true },
+            { "id": "empresa", "displayName": "empresa", "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": true },
+            { "id": "interes", "displayName": "interes", "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": true },
+            { "id": "estado", "displayName": "estado", "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": true }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "sheets_tool",
+      "name": "Google Sheets - Registrar Lead",
+      "type": "n8n-nodes-base.googleSheetsTool",
+      "typeVersion": 4.7,
+      "position": [48, 224],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "OdQCZwcWZBMWMGVt",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "juanbelen815@gmail.com",
+        "subject": "=[Agente Ventas] Nueva interacción procesada",
+        "emailType": "text",
+        "message": "=Se procesó una nueva conversación con el Agente de Ventas.\n\nMensaje del usuario:\n{{ $('Chat Trigger').item.json.chatInput }}\n\nRespuesta del agente:\n{{ $json.output }}\n\nRevisa la hoja de Leads para ver si se registró un nuevo contacto.",
+        "options": {}
+      },
+      "id": "gmail_notify",
+      "name": "Gmail - Notificar Ejecución",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [208, 0],
+      "webhookId": "ac389313-bd4f-41ac-aee7-876a25f07e41",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "6w86xce29jSW6buh",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": "nvidia/nemotron-3-super-120b-a12b:free",
+        "options": {}
+      },
+      "id": "openrouter_model",
+      "name": "OpenRouter Chat Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [-160, 224],
+      "credentials": {
+        "openRouterApi": {
+          "id": "ECQf13OnhlI61BWX",
+          "name": "OpenRouter account"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Chat Trigger": {
+      "main": [[{ "node": "AI Agent", "type": "main", "index": 0 }]]
+    },
+    "AI Agent": {
+      "main": [[{ "node": "Gmail - Notificar Ejecución", "type": "main", "index": 0 }]]
+    },
+    "Google Sheets - Registrar Lead": {
+      "ai_tool": [[{ "node": "AI Agent", "type": "ai_tool", "index": 0 }]]
+    },
+    "OpenRouter Chat Model": {
+      "ai_languageModel": [[{ "node": "AI Agent", "type": "ai_languageModel", "index": 0 }]]
+    }
+  },
+  "pinData": {},
+  "meta": {
+    "instanceId": "checkpoint1-agente-ventas-leads"
+  }
+}
